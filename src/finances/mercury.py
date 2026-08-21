@@ -70,8 +70,6 @@ class BearerToken:
 @dataclass(frozen=True, slots=True)
 class MercuryAccount:
     id: str
-    name: str
-    kind: str
     posted: Money
     available: Money
 
@@ -159,8 +157,6 @@ def _parse_accounts(payload: object) -> tuple[MercuryAccount, ...]:
             accounts.append(
                 MercuryAccount(
                     id=str(row["id"]),
-                    name=str(row["name"]),
-                    kind=str(row.get("kind", "")),
                     posted=Money.parse(str(row["currentBalance"])),
                     available=Money.parse(str(row["availableBalance"])),
                 )
