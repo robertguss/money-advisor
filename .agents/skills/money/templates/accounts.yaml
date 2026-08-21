@@ -3,11 +3,10 @@ accounts:
     name: Example Checking
     type: checking
     csv: transactions/sample-checking.csv
-  - id: sample-card
-    name: Sample Card
-    type: credit
-    csv: transactions/sample-card.csv
-    apr: "0.2499"
+  - id: sample-savings
+    name: Sample Savings
+    type: savings
+    csv: transactions/sample-savings.csv
 bills:
   - id: example-rent
     name: Example Rent

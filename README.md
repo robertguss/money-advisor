@@ -2,7 +2,7 @@
 
 A personal financial advisor you run with the agent you already use. The skill is the advisor. The CLI is the calculator.
 
-Sample data in this repo is invented. Example Checking. Sample Card. Example Rent. No real money. No live accounts.
+Sample data in this repo is invented. Example Checking. Sample Savings. Example Rent. No real money. No live accounts.
 
 ## Install
 

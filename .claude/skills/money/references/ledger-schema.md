@@ -8,12 +8,12 @@ Hand-edited. Required keys per account:
 
 - `id`. Stable slug. Example: `example-checking`.
 - `name`. Display name. Example: `Example Checking`.
-- `type`. `checking`, `credit`, `savings`, or `cash`.
+- `type`. `checking`, `credit`, `savings`, or `cash`. Only `credit` is revolving debt for avalanche. Checking, savings, and cash are cash-like posted balances, not amount owed.
 - `csv`. Path to that account's reconcile CSV, relative to the workspace root.
 
 Optional keys:
 
-- `apr`. Annual percentage rate as a decimal. Example: `0.2499` for a card.
+- `apr`. Annual percentage rate as a decimal. Attach only to debt. Example: `0.2499` for a card. Omit on cash-like accounts.
 
 ## Bills
 

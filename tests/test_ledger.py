@@ -11,7 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_sample_ledger_loads() -> None:
     ledger = load_ledger(ROOT, ROOT / "accounts.sample.yaml")
-    assert [account.name for account in ledger.accounts] == ["Example Checking", "Sample Card"]
+    assert [account.name for account in ledger.accounts] == ["Example Checking", "Sample Savings"]
+    savings = next(account for account in ledger.accounts if account.id == "sample-savings")
+    assert savings.kind == "savings"
+    assert savings.apr is None
     assert "example-rent" in {str(bill_id) for bill_id in ledger.bills}
 
 

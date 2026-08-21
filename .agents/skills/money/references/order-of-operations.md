@@ -20,6 +20,8 @@ Generic thresholds. Not a household's private targets. Adjust only when the huma
 
 List debts by APR descending. Ignore balance size when picking the target. Snowball is allowed only if the human asks for motivation over math. Say which method you used.
 
+Only accounts with `type: credit`, or debts the human named, are avalanche targets. Checking, savings, and cash are cash-like. Do not treat those posted balances as amount owed.
+
 ## Glass box
 
 Every claim in `plan.md` must point at a ledger line, a bill id, or a sentence the human wrote. If the files do not show an APR, do not invent one. If cash on hand is below starter cash, the plan stays on step 1.

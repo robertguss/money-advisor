@@ -22,9 +22,14 @@ def test_sample_checking_ties_and_excludes_pending() -> None:
     assert pending[0].amount == Money.parse("-40.00")
 
 
-def test_sample_card_ties() -> None:
-    stmt = load_statement(ROOT / "transactions" / "sample-card.csv")
-    assert reconcile(stmt).ok
+def test_sample_savings_ties() -> None:
+    stmt = load_statement(ROOT / "transactions" / "sample-savings.csv")
+    result = reconcile(stmt)
+    assert result.ok
+    assert stmt.account == "Sample Savings"
+    assert result.opening == Money.parse("200.00")
+    assert result.closing == Money.parse("150.00")
+    assert result.posted == Money.parse("-50.00")
 
 
 def test_pending_fixture_excluded_from_sum() -> None:
@@ -45,7 +50,7 @@ def test_unbalanced_fixture_fails() -> None:
 def test_directory_fails_when_any_file_breaks() -> None:
     report = reconcile_all(
         [
-            parse_statement((ROOT / "transactions" / "sample-card.csv").read_text(encoding="utf-8")),
+            parse_statement((ROOT / "transactions" / "sample-savings.csv").read_text(encoding="utf-8")),
             load_statement(FIXTURES / "unbalanced.csv"),
         ]
     )

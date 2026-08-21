@@ -71,7 +71,7 @@ One primary action. Optional backup if income is uncertain. No product pitches. 
 
 ## First run
 
-If `accounts.yaml` is missing, copy `.agents/skills/money/templates/accounts.yaml` to the workspace root and ask the human to fill balances. Sample names in this repo are invented. Example Checking. Sample Card. Example Rent.
+If `accounts.yaml` is missing, copy `.agents/skills/money/templates/accounts.yaml` to the workspace root and ask the human to fill balances. Sample names in this repo are invented. Example Checking. Sample Savings. Example Rent.
 
 Ingest paths:
 
