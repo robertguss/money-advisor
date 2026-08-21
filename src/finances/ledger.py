@@ -129,9 +129,15 @@ def parse_statement(text: str, source: str = "<memory>") -> Statement:
             if key == "account":
                 account = value
             elif key == "opening_balance":
-                opening = Money.parse(value)
+                try:
+                    opening = Money.parse(value)
+                except MoneyError as exc:
+                    raise StatementError(f"{source}: {exc}") from exc
             elif key == "closing_balance":
-                closing = Money.parse(value)
+                try:
+                    closing = Money.parse(value)
+                except MoneyError as exc:
+                    raise StatementError(f"{source}: {exc}") from exc
             continue
         if stripped == "":
             continue

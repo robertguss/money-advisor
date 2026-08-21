@@ -196,6 +196,26 @@ def test_verify_sample_tree(tmp_path: Path) -> None:
     assert code == 0, buf.getvalue()
 
 
+def test_verify_bad_opening_records_ledger_fail(tmp_path: Path) -> None:
+    shutil.copy(ROOT / "accounts.sample.yaml", tmp_path / "accounts.yaml")
+    shutil.copytree(ROOT / "transactions", tmp_path / "transactions")
+    shutil.copytree(ROOT / ".agents", tmp_path / ".agents")
+    shutil.copytree(ROOT / ".claude", tmp_path / ".claude")
+    shutil.copy(ROOT / "AGENTS.md", tmp_path / "AGENTS.md")
+    (tmp_path / "transactions" / "sample-checking.csv").write_text(
+        """# account: Example Checking
+# opening_balance: 12.345
+# closing_balance: 2875.50
+date,description,amount,category
+""",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    code = run(Verify(tmp_path), env={}, http=object(), out=buf)
+    assert code == 1
+    assert "FAIL  ledger" in buf.getvalue()
+
+
 def test_verify_fails_without_accounts_yaml(tmp_path: Path) -> None:
     shutil.copytree(ROOT / ".agents", tmp_path / ".agents")
     shutil.copytree(ROOT / ".claude", tmp_path / ".claude")

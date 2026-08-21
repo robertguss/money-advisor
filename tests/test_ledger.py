@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from finances.ledger import LedgerError, Money, load_ledger
+from finances.ledger import LedgerError, Money, StatementError, load_ledger, parse_statement
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +107,39 @@ date,description,amount,category
     )
     (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
     with pytest.raises(LedgerError, match="unknown account"):
+        load_ledger(tmp_path)
+
+
+def test_bad_opening_header_is_statement_error() -> None:
+    text = """# account: Example Checking
+# opening_balance: 12.345
+# closing_balance: 10.00
+date,description,amount,category
+"""
+    with pytest.raises(StatementError, match="whole cents"):
+        parse_statement(text)
+
+
+def test_bad_opening_header_is_ledger_error(tmp_path: Path) -> None:
+    yaml_text = """
+accounts:
+  - id: example-checking
+    name: Example Checking
+    type: checking
+    csv: transactions/sample-checking.csv
+"""
+    tx = tmp_path / "transactions"
+    tx.mkdir()
+    (tx / "sample-checking.csv").write_text(
+        """# account: Example Checking
+# opening_balance: 12.345
+# closing_balance: 10.00
+date,description,amount,category
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
+    with pytest.raises(LedgerError, match="whole cents"):
         load_ledger(tmp_path)
 
 
