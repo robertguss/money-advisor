@@ -36,9 +36,12 @@ def test_pull_uses_independent_opening_and_excludes_pending() -> None:
     stmt = client.statement(
         "00000000-0000-0000-0000-000000000001",
         Money.parse("3000.00"),
+        "Example Checking",
     )
     result = reconcile(stmt)
     assert result.ok
+    assert stmt.account == "Example Checking"
+    assert "xx0000" not in stmt.account
     assert stmt.opening == Money.parse("3000.00")
     assert stmt.closing == Money.parse("2875.50")
     pending = [row for row in stmt.postings if row.status is PostingStatus.PENDING]

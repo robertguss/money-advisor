@@ -14,7 +14,10 @@ Hand-edited. Required keys per account:
 Optional keys:
 
 - `apr`. Annual percentage rate as a decimal. Example: `0.2499` for a card.
-- `bills`. List of bill objects for `finances bills`.
+
+## Bills
+
+Top-level key `bills`. Not nested under an account. `load_ledger` reads this list from the root of `accounts.yaml`. Nested bills are ignored and the checklist is empty.
 
 Bill object:
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
+import pytest
+
 from finances.cli import Balances, ImportCsv, Pull, Reconcile, Verify, parse_argv, run
 from finances.ledger import Money
 from tests.conftest import FakeHttp
@@ -73,6 +75,7 @@ def test_pull_mocked(tmp_path: Path) -> None:
     code = run(
         Pull(
             account_id="00000000-0000-0000-0000-000000000001",
+            account="Example Checking",
             out=out,
             opening=Money.parse("3000.00"),
         ),
@@ -83,9 +86,44 @@ def test_pull_mocked(tmp_path: Path) -> None:
     assert code == 0
     text = out.read_text(encoding="utf-8")
     assert "secret-token" not in text
+    assert "# account: Example Checking" in text
+    assert "xx0000" not in text
     assert "2875.50" in text
     rec = io.StringIO()
     assert run(Reconcile(tmp_path), env={}, http=object(), out=rec) == 0
+
+
+def test_parse_pull_requires_account() -> None:
+    with pytest.raises(SystemExit):
+        parse_argv(
+            [
+                "pull",
+                "--account-id",
+                "00000000-0000-0000-0000-000000000001",
+                "--out",
+                "transactions/sample-checking.csv",
+                "--opening",
+                "3000.00",
+            ]
+        )
+
+
+def test_parse_pull_keeps_display_name() -> None:
+    cmd = parse_argv(
+        [
+            "pull",
+            "--account",
+            "Example Checking",
+            "--account-id",
+            "00000000-0000-0000-0000-000000000001",
+            "--out",
+            "transactions/sample-checking.csv",
+            "--opening",
+            "3000.00",
+        ]
+    )
+    assert isinstance(cmd, Pull)
+    assert cmd.account == "Example Checking"
 
 
 def test_verify_sample_tree() -> None:

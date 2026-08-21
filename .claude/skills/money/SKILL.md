@@ -75,7 +75,7 @@ If `accounts.yaml` is missing, copy `.agents/skills/money/templates/accounts.yam
 
 Ingest paths:
 
-- Drop a bank export and run `uv run finances import-csv <export> --out transactions/<account>.csv`
-- Or set `MERCURY_API_TOKEN` in the environment and run `uv run finances pull`
+- Drop a bank export and run `uv run finances import-csv <export> --out transactions/sample-checking.csv --account "Example Checking" --opening 3000.00 --closing 2875.50`
+- Or set `MERCURY_API_TOKEN` in the environment and run `uv run finances pull --account "Example Checking" --account-id <id> --out transactions/sample-checking.csv --opening 3000.00`
 
-Then reconcile. Never commit the token. Never print the token.
+`--opening` is required on the first `pull` into a new file. Later pulls can omit it and reuse the existing file's opening. Then run `uv run finances reconcile transactions/`. Never commit the token. Never print the token.

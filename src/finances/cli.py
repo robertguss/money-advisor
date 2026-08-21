@@ -44,6 +44,7 @@ class ImportCsv:
 @dataclass(frozen=True, slots=True)
 class Pull:
     account_id: str
+    account: str
     out: Path
     opening: Money | None
 
@@ -91,6 +92,7 @@ def parse_argv(argv: Sequence[str]) -> Command:
 
     pull_p = sub.add_parser("pull", help="GET Mercury transactions into a reconcile CSV")
     pull_p.add_argument("--account-id", required=True)
+    pull_p.add_argument("--account", required=True)
     pull_p.add_argument("--out", type=Path, required=True)
     pull_p.add_argument("--opening")
 
@@ -117,7 +119,12 @@ def parse_argv(argv: Sequence[str]) -> Command:
         )
     if cmd == "pull":
         opening = Money.parse(args.opening) if args.opening else None
-        return Pull(account_id=args.account_id, out=args.out, opening=opening)
+        return Pull(
+            account_id=args.account_id,
+            account=args.account,
+            out=args.out,
+            opening=opening,
+        )
     if cmd == "reconcile":
         return Reconcile(directory=args.directory)
     if cmd == "bills":
@@ -216,7 +223,7 @@ def _run(cmd: Command, *, env: Mapping[str, str], http: HttpGet, out: TextIO) ->
                     print("pull needs --opening on the first write", file=sys.stderr)
                     return 2
                 opening = load_statement(cmd.out).opening
-            stmt = client.statement(cmd.account_id, opening)
+            stmt = client.statement(cmd.account_id, opening, cmd.account)
             write_statement(cmd.out, stmt)
             print(f"wrote {cmd.out}", file=out)
             return 0

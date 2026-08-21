@@ -79,15 +79,14 @@ class MercuryClient:
         payload = self._get("/accounts")
         return _parse_accounts(payload)
 
-    def statement(self, account_id: str, opening: Money, account_name: str | None = None) -> Statement:
+    def statement(self, account_id: str, opening: Money, account_name: str) -> Statement:
         accounts = {account.id: account for account in self.accounts()}
         account = accounts.get(account_id)
         if account is None:
             raise MercuryError("account not found")
         payload = self._get(f"/account/{account_id}/transactions")
         postings = _parse_transactions(payload)
-        name = account_name if account_name is not None else account.name
-        return Statement(name, opening, account.posted, postings)
+        return Statement(account_name, opening, account.posted, postings)
 
     def _get(self, path: str) -> object:
         url = self.base_url.rstrip("/") + path

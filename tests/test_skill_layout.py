@@ -29,3 +29,17 @@ def test_agents_md_names_skill_and_hard_gate() -> None:
     assert "stop" in text.lower()
     assert "snapshot.md" in text
     assert "plan.md" in text
+
+
+def test_skill_documents_ingest_flags() -> None:
+    text = (ROOT / ".agents" / "skills" / "money" / "SKILL.md").read_text(encoding="utf-8")
+    assert "--account" in text
+    assert "--opening" in text
+    assert "--closing" in text
+    assert "--account-id" in text
+    assert "transactions/sample-checking.csv" in text
+    schema = (
+        ROOT / ".agents" / "skills" / "money" / "references" / "ledger-schema.md"
+    ).read_text(encoding="utf-8")
+    assert "Top-level key `bills`" in schema
+    assert "Not nested under an account" in schema
