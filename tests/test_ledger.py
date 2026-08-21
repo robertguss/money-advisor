@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from finances.ledger import LedgerError, Money, load_ledger, require_complete
+from finances.ledger import LedgerError, Money, load_ledger
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,7 +29,7 @@ accounts:
     (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
     (tmp_path / "transactions").mkdir()
     with pytest.raises(LedgerError, match="missing CSV"):
-        require_complete(tmp_path)
+        load_ledger(tmp_path)
 
 
 def test_unclaimed_csv_raises(tmp_path: Path) -> None:
@@ -51,7 +51,7 @@ date,description,amount,category
     (tx / "orphan.csv").write_text(csv.replace("Example Checking", "Orphan"), encoding="utf-8")
     (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
     with pytest.raises(LedgerError, match="unclaimed CSV"):
-        require_complete(tmp_path)
+        load_ledger(tmp_path)
 
 
 def test_csv_name_mismatch_raises(tmp_path: Path) -> None:
@@ -74,7 +74,7 @@ date,description,amount,category
     )
     (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
     with pytest.raises(LedgerError, match="does not match"):
-        require_complete(tmp_path)
+        load_ledger(tmp_path)
 
 
 def test_unknown_bill_account_raises(tmp_path: Path) -> None:
@@ -102,7 +102,7 @@ date,description,amount,category
     )
     (tmp_path / "accounts.yaml").write_text(yaml_text, encoding="utf-8")
     with pytest.raises(LedgerError, match="unknown account"):
-        require_complete(tmp_path)
+        load_ledger(tmp_path)
 
 
 def test_money_rejects_sub_penny() -> None:

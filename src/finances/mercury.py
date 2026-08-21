@@ -11,6 +11,9 @@ from urllib.parse import urlencode
 
 from finances.ledger import Money, MoneyError, Posting, PostingStatus, Statement, total
 
+# ponytail: refuse a truncated Mercury page instead of paging; offset-loop if a 1000-row window is real
+_PAGE = 1000
+
 
 class HttpResponse:
     def __init__(self, status: int, body: str) -> None:
@@ -97,6 +100,7 @@ class MercuryClient:
         if end is not None:
             params["end"] = end.isoformat()
         payload = self._get(f"/account/{account_id}/transactions", params)
+        _reject_truncated_page(payload)
         postings = _parse_transactions(payload, since=since, end=end)
         posted_sum = total(p.amount for p in postings if p.status is PostingStatus.POSTED)
         opening = account.posted - posted_sum
@@ -138,6 +142,29 @@ def _parse_accounts(payload: object) -> tuple[MercuryAccount, ...]:
         except (KeyError, MoneyError) as exc:
             raise MercuryError("account row missing posted or available balance") from exc
     return tuple(accounts)
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(str(value))
+    except ValueError:
+        return None
+
+
+def _reject_truncated_page(payload: object) -> None:
+    if not isinstance(payload, dict):
+        return
+    rows = payload.get("transactions")
+    count = len(rows) if isinstance(rows, list) else 0
+    total = _optional_int(payload.get("total"))
+    if total is not None and total > count:
+        raise MercuryError(
+            f"transaction page incomplete ({count} of {total}); narrow --since/--end"
+        )
+    if total is None and count >= _PAGE:
+        raise MercuryError("transaction page is full; narrow --since/--end")
 
 
 def _parse_transactions(payload: object, *, since: date, end: date | None) -> tuple[Posting, ...]:

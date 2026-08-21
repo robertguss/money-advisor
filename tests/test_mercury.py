@@ -89,6 +89,22 @@ def test_missing_token_raises() -> None:
         BearerToken.from_env({})
 
 
+def test_pull_rejects_truncated_page() -> None:
+    http = FakeHttp(
+        {
+            "/accounts": (FIXTURES / "mercury-accounts.json").read_text(encoding="utf-8"),
+            "/transactions": '{"total":"2","transactions":[]}',
+        }
+    )
+    client = MercuryClient(http=http, token=BearerToken("secret-token:fake"))
+    with pytest.raises(MercuryError, match="incomplete"):
+        client.statement(
+            "00000000-0000-0000-0000-000000000001",
+            "Example Checking",
+            date(2026, 8, 1),
+        )
+
+
 def test_urllib_http_wraps_urlerror() -> None:
     http = UrllibHttp()
     with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timed out")):

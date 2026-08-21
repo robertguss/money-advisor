@@ -40,6 +40,19 @@ def test_import_does_not_invent_opening() -> None:
     assert stmt.opening + stmt.posted_total() == stmt.closing
 
 
+def test_quoted_comma_round_trip() -> None:
+    text = """# account: Quoted
+# opening_balance: 1.00
+# closing_balance: 0.00
+date,description,amount,category
+2026-08-01,"Foo, Bar",-1.00,misc
+"""
+    stmt = parse_statement(text)
+    assert stmt.postings[0].description == "Foo, Bar"
+    again = parse_statement(statement_bytes(stmt).decode("utf-8"))
+    assert again == stmt
+
+
 def test_statement_bytes_round_trip() -> None:
     source = (FIXTURES / "pending-excluded.csv").read_text(encoding="utf-8")
     stmt = parse_statement(source)

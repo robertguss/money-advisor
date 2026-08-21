@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import datetime as dt
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -68,7 +69,6 @@ class Money:
         return f"{sign}{amount // 100}.{amount % 100:02d}"
 
 
-ZERO = Money(0)
 PENNY = Money(1)
 
 
@@ -176,37 +176,7 @@ def _is_pending(description: str, category: str) -> bool:
 
 
 def _split_csv_line(line: str) -> list[str]:
-    parts: list[str] = []
-    current: list[str] = []
-    in_quotes = False
-    i = 0
-    while i < len(line):
-        ch = line[i]
-        if in_quotes:
-            if ch == '"':
-                if i + 1 < len(line) and line[i + 1] == '"':
-                    current.append('"')
-                    i += 2
-                    continue
-                in_quotes = False
-                i += 1
-                continue
-            current.append(ch)
-            i += 1
-            continue
-        if ch == '"':
-            in_quotes = True
-            i += 1
-            continue
-        if ch == ",":
-            parts.append("".join(current).strip())
-            current = []
-            i += 1
-            continue
-        current.append(ch)
-        i += 1
-    parts.append("".join(current).strip())
-    return parts
+    return [part.strip() for part in next(csv.reader([line]))]
 
 
 def statement_bytes(stmt: Statement) -> bytes:
@@ -369,7 +339,3 @@ def load_ledger(root: Path, accounts_path: Path | None = None) -> Ledger:
     if problems:
         raise LedgerError("; ".join(problems))
     return Ledger(root, tuple(accounts), bills)
-
-
-def require_complete(root: Path) -> Ledger:
-    return load_ledger(root)

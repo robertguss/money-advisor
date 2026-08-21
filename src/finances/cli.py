@@ -197,16 +197,10 @@ def run(
 ) -> int:
     try:
         return _run(cmd, env=env, http=http, out=out)
-    except MoneyError as exc:
+    except (MoneyError, MissingTokenError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    except (StatementError, CsvImportError, LedgerError) as exc:
-        print(str(exc), file=sys.stderr)
-        return 1
-    except MissingTokenError as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
-    except MercuryError as exc:
+    except (StatementError, CsvImportError, LedgerError, MercuryError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
