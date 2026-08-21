@@ -1,0 +1,5 @@
+# account: Sample Card
+# opening_balance: 200.00
+# closing_balance: 150.00
+date,description,amount,category
+2026-08-02,Example Hardware,-50.00,household

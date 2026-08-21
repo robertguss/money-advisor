@@ -1,0 +1,25 @@
+{
+  "transactions": [
+    {
+      "amount": "-100.00",
+      "status": "sent",
+      "createdAt": "2026-08-01T12:00:00Z",
+      "counterpartyName": "Example Rent",
+      "mercuryCategory": "example-rent"
+    },
+    {
+      "amount": "-24.50",
+      "status": "sent",
+      "createdAt": "2026-08-03T12:00:00Z",
+      "counterpartyName": "Corner Market",
+      "mercuryCategory": "groceries"
+    },
+    {
+      "amount": "-40.00",
+      "status": "pending",
+      "createdAt": "2026-08-04T12:00:00Z",
+      "counterpartyName": "Sample Cafe",
+      "mercuryCategory": "dining"
+    }
+  ]
+}

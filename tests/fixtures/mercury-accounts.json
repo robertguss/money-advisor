@@ -1,0 +1,11 @@
+{
+  "accounts": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "name": "Example Checking",
+      "kind": "checking",
+      "currentBalance": "2875.50",
+      "availableBalance": "2835.50"
+    }
+  ]
+}

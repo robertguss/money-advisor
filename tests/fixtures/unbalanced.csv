@@ -1,0 +1,5 @@
+# account: Broken Example
+# opening_balance: 100.00
+# closing_balance: 50.00
+date,description,amount,category
+2026-08-01,Example Drift,-10.00,misc

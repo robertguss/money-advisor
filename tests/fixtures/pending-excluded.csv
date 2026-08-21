@@ -1,0 +1,6 @@
+# account: Pending Example
+# opening_balance: 80.00
+# closing_balance: 70.00
+date,description,amount,category
+2026-08-01,Example Transit,-10.00,transport
+2026-08-02,PENDING Example Fuel,-25.00,pending

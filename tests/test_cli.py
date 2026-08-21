@@ -1,0 +1,94 @@
+from __future__ import annotations
+
+import io
+from pathlib import Path
+
+from finances.cli import Balances, ImportCsv, Pull, Reconcile, Verify, parse_argv, run
+from finances.ledger import Money
+from tests.conftest import FakeHttp
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_parse_reconcile() -> None:
+    cmd = parse_argv(["reconcile", "transactions/"])
+    assert isinstance(cmd, Reconcile)
+
+
+def test_reconcile_sample_data_exits_zero() -> None:
+    buf = io.StringIO()
+    code = run(Reconcile(ROOT / "transactions"), env={}, http=object(), out=buf)
+    assert code == 0
+    assert "PASS" in buf.getvalue()
+    assert "reconcile ok" in buf.getvalue()
+
+
+def test_reconcile_unbalanced_exits_one(tmp_path: Path) -> None:
+    dest = tmp_path / "broken.csv"
+    dest.write_text((FIXTURES / "unbalanced.csv").read_text(encoding="utf-8"), encoding="utf-8")
+    buf = io.StringIO()
+    code = run(Reconcile(tmp_path), env={}, http=object(), out=buf)
+    assert code == 1
+    assert "FAIL" in buf.getvalue()
+
+
+def test_import_csv_command(tmp_path: Path) -> None:
+    out = tmp_path / "out.csv"
+    buf = io.StringIO()
+    code = run(
+        ImportCsv(
+            source=FIXTURES / "bank-export.csv",
+            out=out,
+            account="Example Checking",
+            opening=Money.parse("3000.00"),
+            closing=Money.parse("2875.50"),
+        ),
+        env={},
+        http=object(),
+        out=buf,
+    )
+    assert code == 0
+    assert out.exists()
+    text = out.read_text(encoding="utf-8")
+    assert "# opening_balance: 3000.00" in text
+    assert "pending" in text
+
+
+def test_balances_missing_token() -> None:
+    buf = io.StringIO()
+    code = run(Balances(), env={}, http=object(), out=buf)
+    assert code == 2
+
+
+def test_pull_mocked(tmp_path: Path) -> None:
+    http = FakeHttp(
+        {
+            "/accounts": (FIXTURES / "mercury-accounts.json").read_text(encoding="utf-8"),
+            "/transactions": (FIXTURES / "mercury-transactions.json").read_text(encoding="utf-8"),
+        }
+    )
+    out = tmp_path / "pulled.csv"
+    buf = io.StringIO()
+    code = run(
+        Pull(
+            account_id="00000000-0000-0000-0000-000000000001",
+            out=out,
+            opening=Money.parse("3000.00"),
+        ),
+        env={"MERCURY_API_TOKEN": "secret-token:fake"},
+        http=http,
+        out=buf,
+    )
+    assert code == 0
+    text = out.read_text(encoding="utf-8")
+    assert "secret-token" not in text
+    assert "2875.50" in text
+    rec = io.StringIO()
+    assert run(Reconcile(tmp_path), env={}, http=object(), out=rec) == 0
+
+
+def test_verify_sample_tree() -> None:
+    buf = io.StringIO()
+    code = run(Verify(ROOT), env={}, http=object(), out=buf)
+    assert code == 0, buf.getvalue()
