@@ -31,6 +31,8 @@ class UrllibHttp:
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8") if exc.fp else ""
             return HttpResponse(exc.code, body)
+        except urllib.error.URLError as exc:
+            raise MercuryError(f"request failed: {exc.reason}") from exc
 
 
 class MissingTokenError(Exception):

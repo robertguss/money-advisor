@@ -264,6 +264,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if isinstance(code, int):
             return code
         return 2
+    except MoneyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     return run(command, env=os.environ, http=UrllibHttp(), out=sys.stdout)
 
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import urllib.error
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from finances.ledger import Money, PostingStatus
-from finances.mercury import BearerToken, MercuryClient, MissingTokenError
+from finances.mercury import BearerToken, MercuryClient, MercuryError, MissingTokenError, UrllibHttp
 from finances.reconcile import reconcile
 from tests.conftest import FakeHttp
 
@@ -85,3 +87,10 @@ def test_token_repr_is_redacted() -> None:
 def test_missing_token_raises() -> None:
     with pytest.raises(MissingTokenError):
         BearerToken.from_env({})
+
+
+def test_urllib_http_wraps_urlerror() -> None:
+    http = UrllibHttp()
+    with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timed out")):
+        with pytest.raises(MercuryError, match="timed out"):
+            http.get("https://api.mercury.com/api/v1/accounts", {})

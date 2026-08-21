@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from finances.cli import Balances, ImportCsv, Pull, Reconcile, Verify, parse_argv, run
+from finances.cli import Balances, ImportCsv, Pull, Reconcile, Verify, main, parse_argv, run
 from finances.ledger import Money
 from tests.conftest import FakeHttp
 
@@ -164,6 +164,24 @@ def test_parse_pull_optional_end() -> None:
     )
     assert isinstance(cmd, Pull)
     assert cmd.end == date(2026, 8, 31)
+
+
+def test_main_invalid_opening_exits_two() -> None:
+    code = main(
+        [
+            "import-csv",
+            str(FIXTURES / "bank-export.csv"),
+            "--out",
+            "out.csv",
+            "--account",
+            "Example Checking",
+            "--opening",
+            "12.345",
+            "--closing",
+            "2875.50",
+        ]
+    )
+    assert code == 2
 
 
 def test_verify_sample_tree() -> None:
