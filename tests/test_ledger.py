@@ -9,6 +9,11 @@ from finances.ledger import LedgerError, Money, load_ledger
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_missing_accounts_yaml_raises(tmp_path: Path) -> None:
+    with pytest.raises(LedgerError, match="missing"):
+        load_ledger(tmp_path)
+
+
 def test_sample_ledger_loads() -> None:
     ledger = load_ledger(ROOT, ROOT / "accounts.sample.yaml")
     assert [account.name for account in ledger.accounts] == ["Example Checking", "Sample Savings"]

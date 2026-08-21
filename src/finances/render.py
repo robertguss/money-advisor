@@ -36,5 +36,5 @@ def checklist_text(checklist: Checklist) -> str:
 def balances_text(accounts: Sequence[MercuryAccount]) -> str:
     lines = ["account  posted  available"]
     for account in accounts:
-        lines.append(f"{account.name}  {account.posted}  {account.available}")
+        lines.append(f"{account.id}  {account.posted}  {account.available}")
     return "\n".join(lines) + "\n"

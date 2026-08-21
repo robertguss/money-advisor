@@ -24,7 +24,7 @@ Reference. Terms this repo uses with one meaning each.
 
 **Posted.** A settled row. These rows must satisfy `opening + posted == closing` within one cent. On `pull`, posted means Mercury status `sent` and `postedAt` is set.
 
-**Pull.** GET-only adapter. Reads `MERCURY_API_TOKEN` from the environment. Dated window: `--since` required, `--end` optional. Writes a reconcile CSV. Closing is live currentBalance. Opening is currentBalance minus posted sum. Display name comes from `--account`, never Mercury's live `account.name`.
+**Pull.** GET-only adapter. Reads `MERCURY_API_TOKEN` from the environment. Dated window: `--since` required, `--end` optional. Writes a reconcile CSV. Closing is live currentBalance. Opening is currentBalance minus posted sum. Display name comes from `--account`, never Mercury's live `account.name`. `balances` prints account id, not the live name.
 
 **Reconcile.** The gate. `opening_balance + posted amounts == closing_balance` within one cent. Failure stops the advisor.
 

@@ -22,8 +22,8 @@ cp accounts.sample.yaml accounts.yaml
 
 Two ways to ingest:
 
-1. Drop a bank CSV export, then run `uv run finances import-csv path/to/export.csv --out transactions/sample-checking.csv --account "Example Checking" --opening 3000.00 --closing 2875.50`
-2. Set `MERCURY_API_TOKEN` in your environment. Never commit it. Then `uv run finances pull --account "Example Checking" --account-id <id> --since 2026-08-01 --out transactions/sample-checking.csv`
+1. Drop a bank CSV export, then run `uv run finances import-csv path/to/export.csv --out transactions/checking.csv --account "Example Checking" --opening 3000.00 --closing 2875.50`
+2. Set `MERCURY_API_TOKEN` in your environment. Never commit it. Then `uv run finances pull --account "Example Checking" --account-id <id> --since 2026-08-01 --out transactions/checking.csv`
 
 `pull` requires `--since`. Optional `--end` closes the window. `--account`, `--account-id`, and `--out` are required. Opening is derived from live currentBalance minus posted rows, so the first pull does not take `--opening`. `import-csv` still takes `--opening` and `--closing` from the export.
 
@@ -43,4 +43,4 @@ This README is not the skill. The skill is the advisor.
 
 ## Privacy
 
-Keep tokens in the environment. Gitignores `transactions/*` except `sample-*.csv`, so live exports and Mercury pulls are not commitable. The tracked sample CSVs are invented.
+Keep tokens in the environment. Gitignores `transactions/*` except `sample-*.csv`, plus `snapshot.md` and `plan.md`. Write live pulls to a non-sample name such as `transactions/checking.csv`. Do not overwrite the tracked `sample-*.csv` files. The tracked sample CSVs are invented.

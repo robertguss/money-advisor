@@ -12,10 +12,10 @@ from urllib.parse import urlencode
 from finances.ledger import Money, MoneyError, Posting, PostingStatus, Statement, total
 
 
+@dataclass(frozen=True, slots=True)
 class HttpResponse:
-    def __init__(self, status: int, body: str) -> None:
-        self.status = status
-        self.body = body
+    status: int
+    body: str
 
 
 class HttpGet(Protocol):

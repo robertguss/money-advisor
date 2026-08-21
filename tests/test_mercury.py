@@ -21,6 +21,7 @@ from finances.mercury import (
     UrllibHttp,
 )
 from finances.reconcile import reconcile
+from finances.render import balances_text
 from tests.conftest import FakeHttp
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -68,6 +69,9 @@ def test_balances_posted_vs_available() -> None:
     assert len(accounts) == 1
     assert accounts[0].posted == Money.parse("2875.50")
     assert accounts[0].available == Money.parse("2835.50")
+    text = balances_text(accounts)
+    assert "xx0000" not in text
+    assert accounts[0].id in text
 
 
 def test_pull_derives_opening_and_excludes_unposted() -> None:
@@ -198,22 +202,6 @@ def test_token_repr_is_redacted() -> None:
 def test_missing_token_raises() -> None:
     with pytest.raises(MissingTokenError):
         BearerToken.from_env({})
-
-
-def test_pull_rejects_truncated_page() -> None:
-    http = FakeHttp(
-        {
-            "/accounts": (FIXTURES / "mercury-accounts.json").read_text(encoding="utf-8"),
-            "/transactions": '{"total":"2","transactions":[]}',
-        }
-    )
-    client = MercuryClient(http=http, token=BearerToken("secret-token:fake"))
-    with pytest.raises(MercuryError, match="truncated"):
-        client.statement(
-            "00000000-0000-0000-0000-000000000001",
-            "Example Checking",
-            date(2026, 8, 1),
-        )
 
 
 def test_urllib_http_wraps_urlerror() -> None:

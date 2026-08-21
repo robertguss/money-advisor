@@ -17,7 +17,6 @@ from finances.ledger import (
     MoneyError,
     StatementError,
     load_ledger,
-    load_statement,
     load_statements,
     write_statement,
 )
@@ -168,9 +167,9 @@ def verify_repo(root: Path) -> tuple[Check, ...]:
     except LedgerError as exc:
         checks.append(Check("ledger", False, str(exc)))
         return tuple(checks)
-    tx_dir = root / "transactions"
+    statements = tuple(account.statement for account in ledger.accounts if account.statement is not None)
     try:
-        report = reconcile_all(load_statements(tx_dir))
+        report = reconcile_all(statements)
         checks.append(Check("reconcile", report.ok, "transactions/"))
     except StatementError as exc:
         checks.append(Check("reconcile", False, str(exc)))
@@ -200,7 +199,7 @@ def run(
     except (MoneyError, MissingTokenError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    except (StatementError, CsvImportError, LedgerError, MercuryError) as exc:
+    except (StatementError, CsvImportError, LedgerError, MercuryError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
@@ -226,7 +225,11 @@ def _run(cmd: Command, *, env: Mapping[str, str], http: HttpGet, out: TextIO) ->
             return 0 if report.ok else 1
         case Bills():
             ledger = load_ledger(cmd.root)
-            statements = tuple(load_statement(account.statement_path) for account in ledger.accounts)
+            statements = {
+                account.id: account.statement
+                for account in ledger.accounts
+                if account.statement is not None
+            }
             print(checklist_text(check_bills(ledger.bills, statements)), end="", file=out)
             return 0
         case Verify():

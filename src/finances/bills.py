@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from finances.ledger import Bill, BillId, PostingStatus, Statement
@@ -29,7 +29,7 @@ class Checklist:
         return all(isinstance(status, Paid) for status in self.statuses)
 
 
-def check_bills(registry: Mapping[BillId, Bill], statements: Sequence[Statement]) -> Checklist:
+def check_bills(registry: Mapping[BillId, Bill], statements: Mapping[str, Statement]) -> Checklist:
     statuses: list[BillStatus] = []
     for bill in registry.values():
         match = _find_payment(bill, statements)
@@ -40,12 +40,14 @@ def check_bills(registry: Mapping[BillId, Bill], statements: Sequence[Statement]
     return Checklist(tuple(statuses))
 
 
-def _find_payment(bill: Bill, statements: Sequence[Statement]) -> str | None:
+def _find_payment(bill: Bill, statements: Mapping[str, Statement]) -> str | None:
+    stmt = statements.get(bill.account_id)
+    if stmt is None:
+        return None
     needle = str(bill.id).lower()
-    for stmt in statements:
-        for posting in stmt.postings:
-            if posting.status is not PostingStatus.POSTED:
-                continue
-            if posting.category.lower() == needle:
-                return posting.description
+    for posting in stmt.postings:
+        if posting.status is not PostingStatus.POSTED:
+            continue
+        if posting.category.lower() == needle:
+            return posting.description
     return None

@@ -162,15 +162,24 @@ def _parse_row(line: str, source: str) -> Posting:
         occurred = dt.date.fromisoformat(date_text)
     except ValueError as exc:
         raise StatementError(f"{source}: bad date {date_text!r}") from exc
-    status = PostingStatus.PENDING if _is_pending(description, category) else PostingStatus.POSTED
-    stored_category = category
-    if status is PostingStatus.PENDING and category.lower() == "pending":
-        stored_category = "pending"
-    return Posting(occurred, description, Money.parse(amount_text), stored_category, status)
+    try:
+        amount = Money.parse(amount_text)
+    except MoneyError as exc:
+        raise StatementError(f"{source}: {exc}") from exc
+    pending = is_pending(description, category)
+    return Posting(
+        occurred,
+        description,
+        amount,
+        "pending" if pending else category,
+        PostingStatus.PENDING if pending else PostingStatus.POSTED,
+    )
 
 
-def _is_pending(description: str, category: str) -> bool:
+def is_pending(description: str, category: str, status: str = "") -> bool:
     if category.strip().lower() == "pending":
+        return True
+    if status.strip().lower() == "pending":
         return True
     return description.upper().startswith("PENDING")
 
@@ -243,6 +252,7 @@ class Account:
     name: str
     kind: str
     statement_path: Path
+    statement: Statement | None
     apr: str | None
 
 
@@ -261,11 +271,7 @@ def load_ledger(root: Path, accounts_path: Path | None = None) -> Ledger:
     root = root.resolve()
     path = accounts_path if accounts_path is not None else root / "accounts.yaml"
     if not path.exists():
-        sample = root / "accounts.sample.yaml"
-        if sample.exists():
-            path = sample
-        else:
-            raise LedgerError(f"missing {path}")
+        raise LedgerError(f"missing {path}")
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise LedgerError(f"{path}: expected a mapping")
@@ -287,16 +293,8 @@ def load_ledger(root: Path, accounts_path: Path | None = None) -> Ledger:
             continue
         seen_ids.add(account_id)
         csv_path = (root / str(item["csv"])).resolve()
-        accounts.append(
-            Account(
-                id=account_id,
-                name=str(item["name"]),
-                kind=str(item["type"]),
-                statement_path=csv_path,
-                apr=str(item["apr"]) if item.get("apr") is not None else None,
-            )
-        )
         claimed.add(csv_path)
+        stmt: Statement | None = None
         if not csv_path.exists():
             problems.append(f"missing CSV for {item['name']}: {item['csv']}")
         else:
@@ -304,11 +302,23 @@ def load_ledger(root: Path, accounts_path: Path | None = None) -> Ledger:
                 stmt = load_statement(csv_path)
             except StatementError as exc:
                 problems.append(str(exc))
+                stmt = None
             else:
                 if stmt.account != str(item["name"]):
                     problems.append(
                         f"CSV account {stmt.account!r} does not match {item['name']!r}"
                     )
+                    stmt = None
+        accounts.append(
+            Account(
+                id=account_id,
+                name=str(item["name"]),
+                kind=str(item["type"]),
+                statement_path=csv_path,
+                statement=stmt,
+                apr=str(item["apr"]) if item.get("apr") is not None else None,
+            )
+        )
     bills: dict[BillId, Bill] = {}
     for item in raw.get("bills") or []:
         if not isinstance(item, dict):

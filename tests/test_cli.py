@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 from datetime import date
 from pathlib import Path
 
@@ -184,7 +185,39 @@ def test_main_invalid_opening_exits_two() -> None:
     assert code == 2
 
 
-def test_verify_sample_tree() -> None:
+def test_verify_sample_tree(tmp_path: Path) -> None:
+    shutil.copy(ROOT / "accounts.sample.yaml", tmp_path / "accounts.yaml")
+    shutil.copytree(ROOT / "transactions", tmp_path / "transactions")
+    shutil.copytree(ROOT / ".agents", tmp_path / ".agents")
+    shutil.copytree(ROOT / ".claude", tmp_path / ".claude")
+    shutil.copy(ROOT / "AGENTS.md", tmp_path / "AGENTS.md")
     buf = io.StringIO()
-    code = run(Verify(ROOT), env={}, http=object(), out=buf)
+    code = run(Verify(tmp_path), env={}, http=object(), out=buf)
     assert code == 0, buf.getvalue()
+
+
+def test_verify_fails_without_accounts_yaml(tmp_path: Path) -> None:
+    shutil.copytree(ROOT / ".agents", tmp_path / ".agents")
+    shutil.copytree(ROOT / ".claude", tmp_path / ".claude")
+    shutil.copy(ROOT / "AGENTS.md", tmp_path / "AGENTS.md")
+    buf = io.StringIO()
+    code = run(Verify(tmp_path), env={}, http=object(), out=buf)
+    assert code == 1
+    assert "FAIL  ledger" in buf.getvalue()
+
+
+def test_import_missing_file_exits_one(tmp_path: Path) -> None:
+    buf = io.StringIO()
+    code = run(
+        ImportCsv(
+            source=tmp_path / "missing.csv",
+            out=tmp_path / "out.csv",
+            account="Example Checking",
+            opening=Money.parse("1.00"),
+            closing=Money.parse("1.00"),
+        ),
+        env={},
+        http=object(),
+        out=buf,
+    )
+    assert code == 1

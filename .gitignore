@@ -12,3 +12,5 @@ build/
 *.pem
 transactions/*
 !transactions/sample-*.csv
+snapshot.md
+plan.md

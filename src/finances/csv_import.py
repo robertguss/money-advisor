@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, date
 
-from finances.ledger import Money, MoneyError, Posting, PostingStatus, Statement
+from finances.ledger import Money, MoneyError, Posting, PostingStatus, Statement, is_pending
 
 
 class CsvImportError(ValueError):
@@ -79,19 +79,11 @@ def import_bank_csv(text: str, account: str, opening: Money, closing: Money) -> 
             raise CsvImportError("bad amount in export") from exc
         status_raw = (row.get(columns.status) or "").strip() if columns.status else ""
         category_raw = (row.get(columns.category) or "").strip() if columns.category else ""
-        pending = _pending_marker(description, status_raw, category_raw)
+        pending = is_pending(description, category_raw, status_raw)
         category = "pending" if pending else (category_raw or "")
         status = PostingStatus.PENDING if pending else PostingStatus.POSTED
         postings.append(Posting(occurred, description, amount, category, status))
     return Statement(account, opening, closing, tuple(postings))
-
-
-def _pending_marker(description: str, status: str, category: str) -> bool:
-    if category.lower() == "pending":
-        return True
-    if status.lower() == "pending":
-        return True
-    return description.upper().startswith("PENDING")
 
 
 def _row_amount(row: dict[str, str | None], columns: ColumnMap) -> Money:

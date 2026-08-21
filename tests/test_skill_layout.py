@@ -40,7 +40,8 @@ def test_skill_documents_ingest_flags() -> None:
     assert "--since" in text
     assert "--end" in text
     assert "--out" in text
-    assert "transactions/sample-checking.csv" in text
+    assert "transactions/checking.csv" in text
+    assert "--out transactions/sample-checking.csv" not in text
     schema = (
         ROOT / ".agents" / "skills" / "money" / "references" / "ledger-schema.md"
     ).read_text(encoding="utf-8")
@@ -52,3 +53,5 @@ def test_gitignore_hides_live_transaction_csvs() -> None:
     text = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "transactions/*" in text
     assert "!transactions/sample-*.csv" in text
+    assert "snapshot.md" in text
+    assert "plan.md" in text
