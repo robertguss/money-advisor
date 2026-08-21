@@ -6,7 +6,7 @@ dist/
 build/
 .pytest_cache/
 .coverage
-accounts.yaml
+/accounts.yaml
 .env
 .env.local
 *.pem
