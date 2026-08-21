@@ -90,6 +90,7 @@ def test_pull_mocked(tmp_path: Path) -> None:
     assert "secret-token" not in text
     assert "# account: Example Checking" in text
     assert "# opening_balance: 3000.00" in text
+    assert "example-rent" in text
     assert "xx0000" not in text
     assert "2875.50" in text
     assert any("start=2026-07-02" in url for url in http.urls)

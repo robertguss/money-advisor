@@ -200,9 +200,18 @@ def _parse_transactions(rows: list[object], *, since: date, end: date | None) ->
             amount = Money.parse(str(row["amount"]))
         except (KeyError, MoneyError) as exc:
             raise MercuryError("transaction missing amount") from exc
-        category = "pending" if status is PostingStatus.PENDING else str(row.get("mercuryCategory") or "")
+        category = "pending" if status is PostingStatus.PENDING else _csv_category(row)
         postings.append(Posting(occurred, description, amount, category, status))
     return tuple(postings)
+
+
+def _csv_category(row: Mapping[str, object]) -> str:
+    data = row.get("categoryData")
+    if isinstance(data, dict):
+        name = str(data.get("name") or "").strip()
+        if name:
+            return name
+    return str(row.get("mercuryCategory") or "")
 
 
 def _is_posted(row: Mapping[str, object]) -> bool:

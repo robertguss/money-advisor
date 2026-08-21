@@ -46,7 +46,7 @@ date,description,amount,category
 Rules:
 
 - On `finances import-csv`, `--opening` and `--closing` come from the export. Do not invent them.
-- On `finances pull`, closing is live currentBalance. Opening is derived as currentBalance minus posted sum so the file ties. Posted means Mercury status `sent` with `postedAt` set. Everything else is pending.
+- On `finances pull`, closing is live currentBalance. Opening is derived as currentBalance minus posted sum so the file ties. Posted means Mercury status `sent` with `postedAt` set. Everything else is pending. CSV category is `categoryData.name`, or `mercuryCategory` if name is empty. Bill harvest matches that category to bill id.
 - `amount` is the signed change. Money out is negative. Money in is positive. Credit-card spend is negative on the card CSV.
 - A row whose `category` is `pending` is visible and excluded from the posted sum. A `PENDING` prefix on the description is also treated as pending.
 - Closing is the posted balance. Pending does not change it.

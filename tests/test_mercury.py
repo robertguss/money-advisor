@@ -10,7 +10,8 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from finances.ledger import Money, PostingStatus
+from finances.bills import Paid, check_bills
+from finances.ledger import Bill, BillId, Money, PostingStatus
 from finances.mercury import (
     CREATED_LOOKBACK_DAYS,
     BearerToken,
@@ -85,6 +86,10 @@ def test_pull_derives_opening_and_excludes_unposted() -> None:
     assert stmt.closing == Money.parse("2875.50")
     posted = [row for row in stmt.postings if row.status is PostingStatus.POSTED]
     pending = [row for row in stmt.postings if row.status is PostingStatus.PENDING]
+    rent = next(row for row in posted if row.description == "Example Rent")
+    market = next(row for row in posted if row.description == "Corner Market")
+    assert rent.category == "example-rent"
+    assert market.category == "groceries"
     assert {row.description for row in posted} == {"Example Rent", "Corner Market"}
     assert {row.description for row in pending} == {
         "Sample Cafe",
@@ -191,6 +196,37 @@ def test_includes_created_before_since_posted_in_window() -> None:
     assert stmt.opening == Money.parse("2890.50")
     assert any(f"start={API_START}" in url for url in http.urls)
     assert API_START < "2026-07-25"
+
+
+def test_pull_uses_category_data_name_for_bill_id() -> None:
+    client, _ = _client()
+    stmt = client.statement(ACCOUNT_ID, "Example Checking", SINCE)
+    bill = Bill(BillId("example-rent"), "Example Rent", Money.parse("100.00"), "example-checking")
+    checklist = check_bills({bill.id: bill}, {"example-checking": stmt})
+    assert isinstance(checklist.statuses[0], Paid)
+
+
+def test_pull_category_falls_back_to_mercury_category() -> None:
+    http = FakeHttp(
+        {
+            "/accounts": ACCOUNTS,
+            "/transactions": _page(
+                {
+                    "amount": "-100.00",
+                    "status": "sent",
+                    "createdAt": "2026-08-01T12:00:00Z",
+                    "postedAt": "2026-08-01T12:00:00Z",
+                    "counterpartyName": "Example Rent",
+                    "mercuryCategory": "example-rent",
+                    "categoryData": {"name": ""},
+                },
+                total=1,
+            ),
+        }
+    )
+    client = MercuryClient(http=http, token=BearerToken("secret-token:fake"))
+    stmt = client.statement(ACCOUNT_ID, "Example Checking", SINCE)
+    assert stmt.postings[0].category == "example-rent"
 
 
 def test_token_repr_is_redacted() -> None:
