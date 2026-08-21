@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -76,8 +77,8 @@ def test_pull_mocked(tmp_path: Path) -> None:
         Pull(
             account_id="00000000-0000-0000-0000-000000000001",
             account="Example Checking",
+            since=date(2026, 8, 1),
             out=out,
-            opening=Money.parse("3000.00"),
         ),
         env={"MERCURY_API_TOKEN": "secret-token:fake"},
         http=http,
@@ -87,8 +88,10 @@ def test_pull_mocked(tmp_path: Path) -> None:
     text = out.read_text(encoding="utf-8")
     assert "secret-token" not in text
     assert "# account: Example Checking" in text
+    assert "# opening_balance: 3000.00" in text
     assert "xx0000" not in text
     assert "2875.50" in text
+    assert any("start=2026-08-01" in url for url in http.urls)
     rec = io.StringIO()
     assert run(Reconcile(tmp_path), env={}, http=object(), out=rec) == 0
 
@@ -100,10 +103,25 @@ def test_parse_pull_requires_account() -> None:
                 "pull",
                 "--account-id",
                 "00000000-0000-0000-0000-000000000001",
+                "--since",
+                "2026-08-01",
                 "--out",
                 "transactions/sample-checking.csv",
-                "--opening",
-                "3000.00",
+            ]
+        )
+
+
+def test_parse_pull_requires_since() -> None:
+    with pytest.raises(SystemExit):
+        parse_argv(
+            [
+                "pull",
+                "--account",
+                "Example Checking",
+                "--account-id",
+                "00000000-0000-0000-0000-000000000001",
+                "--out",
+                "transactions/sample-checking.csv",
             ]
         )
 
@@ -116,14 +134,36 @@ def test_parse_pull_keeps_display_name() -> None:
             "Example Checking",
             "--account-id",
             "00000000-0000-0000-0000-000000000001",
+            "--since",
+            "2026-08-01",
             "--out",
             "transactions/sample-checking.csv",
-            "--opening",
-            "3000.00",
         ]
     )
     assert isinstance(cmd, Pull)
     assert cmd.account == "Example Checking"
+    assert cmd.since == date(2026, 8, 1)
+    assert cmd.end is None
+
+
+def test_parse_pull_optional_end() -> None:
+    cmd = parse_argv(
+        [
+            "pull",
+            "--account",
+            "Example Checking",
+            "--account-id",
+            "00000000-0000-0000-0000-000000000001",
+            "--since",
+            "2026-08-01",
+            "--end",
+            "2026-08-31",
+            "--out",
+            "transactions/sample-checking.csv",
+        ]
+    )
+    assert isinstance(cmd, Pull)
+    assert cmd.end == date(2026, 8, 31)
 
 
 def test_verify_sample_tree() -> None:

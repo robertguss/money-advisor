@@ -37,6 +37,9 @@ def test_skill_documents_ingest_flags() -> None:
     assert "--opening" in text
     assert "--closing" in text
     assert "--account-id" in text
+    assert "--since" in text
+    assert "--end" in text
+    assert "--out" in text
     assert "transactions/sample-checking.csv" in text
     schema = (
         ROOT / ".agents" / "skills" / "money" / "references" / "ledger-schema.md"

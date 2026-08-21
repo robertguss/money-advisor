@@ -18,13 +18,13 @@ Reference. Terms this repo uses with one meaning each.
 
 **Ledger.** Hand-owned `accounts.yaml` plus per-account CSVs under `transactions/`.
 
-**Opening balance.** Posted balance at the start of the CSV window. Taken from the export or from a known posted figure. Never back-computed from closing minus rows.
+**Opening balance.** Posted balance at the start of the CSV window. On `import-csv`, taken from `--opening` on the export. On `pull`, derived as live currentBalance minus the posted sum so the written file ties.
 
-**Pending.** A row that is visible and excluded from the posted sum. Marked by a `PENDING` description prefix or `category` equal to `pending`.
+**Pending.** A row that is visible and excluded from the posted sum. Marked by a `PENDING` description prefix or `category` equal to `pending`. On `pull`, every Mercury row that is not posted (`sent` with `postedAt` set) is pending, including cancelled, failed, reversed, blocked, and `sent` without `postedAt`.
 
-**Posted.** A settled row. These rows must satisfy `opening + posted == closing` within one cent.
+**Posted.** A settled row. These rows must satisfy `opening + posted == closing` within one cent. On `pull`, posted means Mercury status `sent` and `postedAt` is set.
 
-**Pull.** GET-only adapter. Reads `MERCURY_API_TOKEN` from the environment. Writes a reconcile CSV. Closing comes from the API posted balance. Opening is a separate known figure passed in, never the transaction sum.
+**Pull.** GET-only adapter. Reads `MERCURY_API_TOKEN` from the environment. Dated window: `--since` required, `--end` optional. Writes a reconcile CSV. Closing is live currentBalance. Opening is currentBalance minus posted sum. Display name comes from `--account`, never Mercury's live `account.name`.
 
 **Reconcile.** The gate. `opening_balance + posted amounts == closing_balance` within one cent. Failure stops the advisor.
 

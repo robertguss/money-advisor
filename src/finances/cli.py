@@ -5,6 +5,7 @@ import os
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import TextIO, assert_never
 
@@ -45,8 +46,9 @@ class ImportCsv:
 class Pull:
     account_id: str
     account: str
+    since: date
     out: Path
-    opening: Money | None
+    end: date | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,8 +95,9 @@ def parse_argv(argv: Sequence[str]) -> Command:
     pull_p = sub.add_parser("pull", help="GET Mercury transactions into a reconcile CSV")
     pull_p.add_argument("--account-id", required=True)
     pull_p.add_argument("--account", required=True)
+    pull_p.add_argument("--since", required=True, type=date.fromisoformat)
+    pull_p.add_argument("--end", type=date.fromisoformat)
     pull_p.add_argument("--out", type=Path, required=True)
-    pull_p.add_argument("--opening")
 
     rec_p = sub.add_parser("reconcile", help="opening plus posted must equal closing")
     rec_p.add_argument("directory", type=Path)
@@ -118,12 +121,14 @@ def parse_argv(argv: Sequence[str]) -> Command:
             closing=Money.parse(args.closing),
         )
     if cmd == "pull":
-        opening = Money.parse(args.opening) if args.opening else None
+        if args.end is not None and args.end < args.since:
+            parser.error("--end must be on or after --since")
         return Pull(
             account_id=args.account_id,
             account=args.account,
+            since=args.since,
             out=args.out,
-            opening=opening,
+            end=args.end,
         )
     if cmd == "reconcile":
         return Reconcile(directory=args.directory)
@@ -217,13 +222,7 @@ def _run(cmd: Command, *, env: Mapping[str, str], http: HttpGet, out: TextIO) ->
         case Pull():
             token = BearerToken.from_env(env)
             client = MercuryClient(http=http, token=token)
-            opening = cmd.opening
-            if opening is None:
-                if not cmd.out.exists():
-                    print("pull needs --opening on the first write", file=sys.stderr)
-                    return 2
-                opening = load_statement(cmd.out).opening
-            stmt = client.statement(cmd.account_id, opening, cmd.account)
+            stmt = client.statement(cmd.account_id, cmd.account, cmd.since, cmd.end)
             write_statement(cmd.out, stmt)
             print(f"wrote {cmd.out}", file=out)
             return 0

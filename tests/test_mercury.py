@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -31,12 +32,12 @@ def test_balances_posted_vs_available() -> None:
     assert accounts[0].available == Money.parse("2835.50")
 
 
-def test_pull_uses_independent_opening_and_excludes_pending() -> None:
-    client, _ = _client()
+def test_pull_derives_opening_and_excludes_unposted() -> None:
+    client, http = _client()
     stmt = client.statement(
         "00000000-0000-0000-0000-000000000001",
-        Money.parse("3000.00"),
         "Example Checking",
+        date(2026, 8, 1),
     )
     result = reconcile(stmt)
     assert result.ok
@@ -44,9 +45,35 @@ def test_pull_uses_independent_opening_and_excludes_pending() -> None:
     assert "xx0000" not in stmt.account
     assert stmt.opening == Money.parse("3000.00")
     assert stmt.closing == Money.parse("2875.50")
+    posted = [row for row in stmt.postings if row.status is PostingStatus.POSTED]
     pending = [row for row in stmt.postings if row.status is PostingStatus.PENDING]
-    assert len(pending) == 1
-    assert pending[0].amount == Money.parse("-40.00")
+    assert {row.description for row in posted} == {"Example Rent", "Corner Market"}
+    assert {row.description for row in pending} == {
+        "Sample Cafe",
+        "Cancelled Wire",
+        "Failed ACH",
+        "Reversed Check",
+        "Blocked Transfer",
+        "Unposted Sent",
+    }
+    assert any("start=2026-08-01" in url for url in http.urls)
+    assert all("end=" not in url for url in http.urls if "/transactions" in url)
+
+
+def test_pull_sends_optional_end() -> None:
+    client, http = _client()
+    stmt = client.statement(
+        "00000000-0000-0000-0000-000000000001",
+        "Example Checking",
+        date(2026, 8, 1),
+        date(2026, 8, 3),
+    )
+    assert any("start=2026-08-01" in url and "end=2026-08-03" in url for url in http.urls)
+    assert {row.description for row in stmt.postings if row.status is PostingStatus.POSTED} == {
+        "Example Rent",
+        "Corner Market",
+    }
+    assert all(row.date <= date(2026, 8, 3) for row in stmt.postings)
 
 
 def test_token_repr_is_redacted() -> None:
