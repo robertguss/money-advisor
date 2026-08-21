@@ -91,7 +91,7 @@ def test_pull_mocked(tmp_path: Path) -> None:
     assert "# opening_balance: 3000.00" in text
     assert "xx0000" not in text
     assert "2875.50" in text
-    assert any("start=2026-08-01" in url for url in http.urls)
+    assert any("start=2026-07-02" in url for url in http.urls)
     rec = io.StringIO()
     assert run(Reconcile(tmp_path), env={}, http=object(), out=rec) == 0
 

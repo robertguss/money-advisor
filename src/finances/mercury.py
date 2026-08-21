@@ -5,14 +5,11 @@ import urllib.error
 import urllib.request
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Protocol
 from urllib.parse import urlencode
 
 from finances.ledger import Money, MoneyError, Posting, PostingStatus, Statement, total
-
-# ponytail: refuse a truncated Mercury page instead of paging; offset-loop if a 1000-row window is real
-_PAGE = 1000
 
 
 class HttpResponse:
@@ -44,6 +41,10 @@ class MissingTokenError(Exception):
 
 class MercuryError(Exception):
     pass
+
+
+CREATED_LOOKBACK_DAYS = 30  # ponytail: createdAt lookback; ACH older than this still misses
+_PAGE_SIZE = 1000
 
 
 @dataclass(frozen=True)
@@ -96,15 +97,40 @@ class MercuryClient:
         account = accounts.get(account_id)
         if account is None:
             raise MercuryError("account not found")
-        params: dict[str, str] = {"start": since.isoformat()}
+        params: dict[str, str] = {
+            "start": (since - timedelta(days=CREATED_LOOKBACK_DAYS)).isoformat()
+        }
         if end is not None:
             params["end"] = end.isoformat()
-        payload = self._get(f"/account/{account_id}/transactions", params)
-        _reject_truncated_page(payload)
-        postings = _parse_transactions(payload, since=since, end=end)
+        rows = self._transaction_rows(account_id, params)
+        postings = _parse_transactions(rows, since=since, end=end)
         posted_sum = total(p.amount for p in postings if p.status is PostingStatus.POSTED)
         opening = account.posted - posted_sum
         return Statement(account_name, opening, account.posted, postings)
+
+    def _transaction_rows(self, account_id: str, params: Mapping[str, str]) -> list[object]:
+        rows: list[object] = []
+        offset = 0
+        while True:
+            page_params = {**params, "limit": str(_PAGE_SIZE), "offset": str(offset)}
+            page, reported_total = _transaction_page(
+                self._get(f"/account/{account_id}/transactions", page_params)
+            )
+            rows.extend(page)
+            if reported_total is not None:
+                if len(rows) == reported_total:
+                    return rows
+                if len(rows) > reported_total:
+                    raise MercuryError("transaction page longer than total")
+                if len(page) == 0:
+                    raise MercuryError(
+                        f"transaction list truncated: got {len(rows)} of {reported_total}"
+                    )
+                offset = len(rows)
+                continue
+            if len(page) < _PAGE_SIZE:
+                return rows
+            raise MercuryError("transaction page is full; narrow --since/--end")
 
     def _get(self, path: str, params: Mapping[str, str] | None = None) -> object:
         url = self.base_url.rstrip("/") + path
@@ -144,35 +170,22 @@ def _parse_accounts(payload: object) -> tuple[MercuryAccount, ...]:
     return tuple(accounts)
 
 
-def _optional_int(value: object) -> int | None:
-    if value is None:
-        return None
-    try:
-        return int(str(value))
-    except ValueError:
-        return None
-
-
-def _reject_truncated_page(payload: object) -> None:
-    if not isinstance(payload, dict):
-        return
-    rows = payload.get("transactions")
-    count = len(rows) if isinstance(rows, list) else 0
-    total = _optional_int(payload.get("total"))
-    if total is not None and total > count:
-        raise MercuryError(
-            f"transaction page incomplete ({count} of {total}); narrow --since/--end"
-        )
-    if total is None and count >= _PAGE:
-        raise MercuryError("transaction page is full; narrow --since/--end")
-
-
-def _parse_transactions(payload: object, *, since: date, end: date | None) -> tuple[Posting, ...]:
+def _transaction_page(payload: object) -> tuple[list[object], int | None]:
     if not isinstance(payload, dict):
         raise MercuryError("transactions payload must be an object")
     rows = payload.get("transactions")
     if not isinstance(rows, list):
         raise MercuryError("transactions list missing")
+    raw_total = payload.get("total")
+    if raw_total is None:
+        return rows, None
+    try:
+        return rows, int(raw_total)
+    except (TypeError, ValueError) as exc:
+        raise MercuryError("bad transaction total") from exc
+
+
+def _parse_transactions(rows: list[object], *, since: date, end: date | None) -> tuple[Posting, ...]:
     postings: list[Posting] = []
     for row in rows:
         if not isinstance(row, dict):
