@@ -10,3 +10,5 @@ build/
 .env
 .env.local
 *.pem
+transactions/*
+!transactions/sample-*.csv

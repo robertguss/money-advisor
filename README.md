@@ -43,4 +43,4 @@ This README is not the skill. The skill is the advisor.
 
 ## Privacy
 
-Keep tokens in the environment. Keep real CSVs out of git if they hold your life. The sample files are fake on purpose.
+Keep tokens in the environment. Gitignores `transactions/*` except `sample-*.csv`, so live exports and Mercury pulls are not commitable. The tracked sample CSVs are invented.

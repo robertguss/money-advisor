@@ -46,3 +46,9 @@ def test_skill_documents_ingest_flags() -> None:
     ).read_text(encoding="utf-8")
     assert "Top-level key `bills`" in schema
     assert "Not nested under an account" in schema
+
+
+def test_gitignore_hides_live_transaction_csvs() -> None:
+    text = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "transactions/*" in text
+    assert "!transactions/sample-*.csv" in text
