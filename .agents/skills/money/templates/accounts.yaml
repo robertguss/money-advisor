@@ -1,0 +1,15 @@
+accounts:
+  - id: example-checking
+    name: Example Checking
+    type: checking
+    csv: transactions/sample-checking.csv
+  - id: sample-savings
+    name: Sample Savings
+    type: savings
+    csv: transactions/sample-savings.csv
+bills:
+  - id: example-rent
+    name: Example Rent
+    amount: "100.00"
+    due_day: 1
+    account_id: example-checking

@@ -1,0 +1,70 @@
+{
+  "total": 9,
+  "transactions": [
+    {
+      "amount": "-100.00",
+      "status": "sent",
+      "createdAt": "2026-08-01T12:00:00Z",
+      "postedAt": "2026-08-01T12:00:00Z",
+      "counterpartyName": "Example Rent",
+      "mercuryCategory": "other",
+      "categoryData": {"name": "example-rent"}
+    },
+    {
+      "amount": "-24.50",
+      "status": "sent",
+      "createdAt": "2026-08-03T12:00:00Z",
+      "postedAt": "2026-08-03T18:00:00Z",
+      "counterpartyName": "Corner Market",
+      "mercuryCategory": "other",
+      "categoryData": {"name": "groceries"}
+    },
+    {
+      "amount": "-40.00",
+      "status": "pending",
+      "createdAt": "2026-08-04T12:00:00Z",
+      "counterpartyName": "Sample Cafe",
+      "mercuryCategory": "restaurants",
+      "categoryData": {"name": "dining"}
+    },
+    {
+      "amount": "-10.00",
+      "status": "cancelled",
+      "createdAt": "2026-08-05T12:00:00Z",
+      "counterpartyName": "Cancelled Wire"
+    },
+    {
+      "amount": "-5.00",
+      "status": "failed",
+      "createdAt": "2026-08-05T13:00:00Z",
+      "counterpartyName": "Failed ACH"
+    },
+    {
+      "amount": "-12.00",
+      "status": "reversed",
+      "createdAt": "2026-08-05T14:00:00Z",
+      "counterpartyName": "Reversed Check"
+    },
+    {
+      "amount": "-7.00",
+      "status": "blocked",
+      "createdAt": "2026-08-05T15:00:00Z",
+      "counterpartyName": "Blocked Transfer"
+    },
+    {
+      "amount": "-8.00",
+      "status": "sent",
+      "createdAt": "2026-08-06T12:00:00Z",
+      "counterpartyName": "Unposted Sent"
+    },
+    {
+      "amount": "-99.00",
+      "status": "sent",
+      "createdAt": "2026-07-01T12:00:00Z",
+      "postedAt": "2026-07-01T12:00:00Z",
+      "counterpartyName": "Prior Month Rent",
+      "mercuryCategory": "other",
+      "categoryData": {"name": "example-rent"}
+    }
+  ]
+}
